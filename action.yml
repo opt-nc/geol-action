@@ -1,0 +1,27 @@
+name: 'Geol Action'
+description: 'Installs geol via the install.sh script from the geol repo'
+
+inputs:
+  ref:
+    description: 'Branch, tag or SHA of the geol repo to use'
+    required: false
+    default: 'main'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repo geol
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        repository: opt-nc/geol
+        ref: ${{ inputs.ref }}
+        path: _geol_tmp
+
+    - name: Run install.sh
+      shell: bash
+      run: |
+        bash _geol_tmp/install.sh
+
+    - name: Cleanup
+      shell: bash
+      run: rm -rf _geol_tmp
