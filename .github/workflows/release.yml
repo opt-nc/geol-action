@@ -1,0 +1,73 @@
+name: 🎯 Release
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  release:
+    name: 🎯 Semantic Release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+      pull-requests: write
+    outputs:
+      new_release_published: ${{ steps.release.outputs.new_release_published }}
+      new_release_version: ${{ steps.release.outputs.new_release_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      
+      - name: 📦 Semantic Release
+        id: release
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90
+        with:
+          extra_plugins: |
+            @semantic-release/exec
+            @semantic-release/git
+            @semantic-release/release-notes-generator
+            conventional-changelog-conventionalcommits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  post-release:
+    name: 📝 Post-Release Tasks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [release]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+      
+      - name: 👍 Merge main back to dev
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git fetch
+          git checkout develop
+          git branch --set-upstream-to=origin/develop develop
+          git pull
+          git merge --no-ff main -m "Auto-merge main back to dev"
+          git push
+
+  cleanup:
+    name: 🧹 Cleanup Pre-Releases
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [release, post-release]
+    if: github.ref == 'refs/heads/main' && needs.release.outputs.new_release_published == 'true'
+    steps:
+      - name: Delete pre-releases
+        uses: dev-drprasad/delete-older-releases@dfbe6be2a006e9475dfcbe5b8d201f1824c2a9fe
+        with:
+          delete_tag_pattern: develop
+          keep_latest: 0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
