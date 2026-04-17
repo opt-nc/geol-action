@@ -8,6 +8,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  test-install-latest:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      
+      - name: Install Geol
+        uses: ./
+      
+      - name: Verify Geol Installation
+        run: |
+          geol about
+          
   test-install:
     runs-on: ubuntu-latest
     
@@ -18,7 +32,7 @@ jobs:
       - name: Install Geol
         uses: ./
         with:
-          ref: 'main'
+          version: 'v2.12.1'
       
       - name: Verify Geol Installation
         run: |

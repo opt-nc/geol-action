@@ -28,7 +28,9 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install geol
-        uses: vfaucher/geol-action@
+        uses: opt-nc/geol-action
+        with:
+          version: 'v2.12.1' # Optional: specify a version or use 'latest'
 
       - name: Check stack EOL
         run: |
