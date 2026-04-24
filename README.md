@@ -5,6 +5,9 @@
 
 GitHub Action to install [geol](https://github.com/opt-nc/geol) in your GitHub Actions workflows.
 
+[<img width="1280" height="720" alt="Untitled design" src="https://github.com/user-attachments/assets/019641ba-4f9d-4f89-b296-3694bf472f85" />
+](https://www.youtube.com/watch?v=0havqKL-Suo)
+
 ## 📖 About
 
 `geol` is a Go-based CLI tool to efficiently manage and monitor End Of Life (EOL) dates for various products and technologies, directly from your terminal and CI/CD pipelines, using the [endoflife.date](https://endoflife.date/) API.
