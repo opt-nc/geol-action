@@ -2,11 +2,9 @@
 
 ![GitHub License](https://img.shields.io/github/license/opt-nc/geol-action)
 
-
 GitHub Action to install [geol](https://github.com/opt-nc/geol) in your GitHub Actions workflows.
 
-[<img width="1280" height="720" alt="Untitled design" src="https://github.com/user-attachments/assets/019641ba-4f9d-4f89-b296-3694bf472f85" />
-](https://www.youtube.com/watch?v=0havqKL-Suo)
+[![Geol Action demo video thumbnail](https://github.com/user-attachments/assets/019641ba-4f9d-4f89-b296-3694bf472f85)](https://www.youtube.com/watch?v=0havqKL-Suo)
 
 ## 📖 About
 
@@ -33,7 +31,7 @@ jobs:
       - name: Install geol
         uses: opt-nc/geol-action
         with:
-          version: 'v2.12.1' # Optional: specify a version or use 'latest'
+          version: 'v2.12.3' # Optional: specify a version or use 'latest'
 
       - name: Check stack EOL
         run: |
@@ -43,10 +41,9 @@ jobs:
 ## 🔧 How it works
 
 This action:
-1. Clones the [opt-nc/geol](https://github.com/opt-nc/geol) repository
-2. Runs the `install.sh` script
-3. Cleans up temporary files
-4. Makes `geol` available for the next workflow steps
+
+1. Downloads the specified version of `geol` (or the latest if not specified) from the GitHub releases
+2. Makes `geol` available for the next workflow steps
 
 ## 📚 geol Documentation
 
@@ -63,4 +60,3 @@ Contributions are welcome! Feel free to open an issue or pull request.
 ## 📄 License
 
 This GitHub Action is distributed under the Apache-2.0 license. See the [LICENSE](LICENSE) file for details.
-
