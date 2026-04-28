@@ -1,5 +1,8 @@
 name: 'Geol Action'
-description: 'Installs geol via the install.sh script from the geol repo'
+description: 'Installs [geol](https://github.com/opt-nc/geol) in a GitHub Actions workflow.'
+branding :
+  icon : 'calendar'
+  color : 'green'
 
 inputs:
   version:
