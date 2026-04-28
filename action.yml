@@ -1,5 +1,8 @@
 name: 'Geol Action'
-description: 'Installs geol via the install.sh script from the geol repo'
+description: 'Installs [geol](https://github.com/opt-nc/geol) in a GitHub Actions workflow.'
+branding :
+  icon : 'calendar'
+  color : 'green'
 
 inputs:
   version:
@@ -12,4 +15,6 @@ runs:
   steps:
     - name: Install geol
       shell: bash
-      run: curl -fsSL https://raw.githubusercontent.com/opt-nc/geol/main/install.sh | bash -s ${{ inputs.version }}
+      env:
+        VERSION: ${{ inputs.version }}
+      run: curl -fsSL https://raw.githubusercontent.com/opt-nc/geol/main/install.sh | bash -s "$VERSION"
