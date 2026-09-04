@@ -6,7 +6,8 @@ set -uo pipefail
 FILE="${GEOL_FILE:-.geol.yaml}"
 DATE="${GEOL_DATE:-}"
 STRICT="${GEOL_STRICT:-false}"
-ISSUE_TITLE_TEMPLATE="${GEOL_ISSUE_TITLE:-EOL report - {{app_name}}}"
+ISSUE_TITLE_DEFAULT='EOL report - {{app_name}}'
+ISSUE_TITLE_TEMPLATE="${GEOL_ISSUE_TITLE:-$ISSUE_TITLE_DEFAULT}"
 EOL_LABEL="${GEOL_EOL_LABEL:-eol}"
 WARNING_LABEL="${GEOL_WARNING_LABEL:-eol:warning}"
 EXTRA_LABELS="${GEOL_EXTRA_LABELS:-}"
@@ -61,6 +62,12 @@ ${TABLE}
 EOF
 )"
 
+# Stable, exact-match label used to find the managed issue again on later runs.
+# (Full-text body search is unreliable: search-index propagation delay and
+# special characters like "<!--"/":" in the marker are not matched reliably.)
+APP_SLUG="$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed 's/-\{2,\}/-/g; s/^-//; s/-$//')"
+TRACKING_LABEL="geol-report:${APP_SLUG:-stack}"
+
 echo "$JSON_OUTPUT" > /tmp/geol-check-result.json
 {
   echo "eol-count=${EOL_COUNT}"
@@ -81,6 +88,8 @@ if [ "$STRICT" = "true" ]; then
   ISSUE_TITLE="${ISSUE_TITLE_TEMPLATE//\{\{app_name\}\}/${APP_NAME}}"
   ISSUE_TITLE="${ISSUE_TITLE//\{\{date\}\}/${TODAY}}"
   ISSUE_TITLE="${ISSUE_TITLE//\{\{score\}\}/${SCORE_VALUE}}"
+  # Safety net: drop any unrecognized {{placeholder}} left in the title.
+  ISSUE_TITLE="$(echo "$ISSUE_TITLE" | sed -E 's/\{\{[a-zA-Z0-9_]+\}\}//g')"
 
   LABELS=()
   if [ "$EOL_COUNT" -gt 0 ]; then
@@ -93,6 +102,7 @@ if [ "$STRICT" = "true" ]; then
     l_trimmed="$(echo "$l" | xargs)"
     [ -n "$l_trimmed" ] && LABELS+=("$l_trimmed")
   done
+  LABELS+=("$TRACKING_LABEL")
 
   # Ensure labels exist (ignore errors if they already do).
   for l in "${LABELS[@]}"; do
@@ -100,7 +110,7 @@ if [ "$STRICT" = "true" ]; then
   done
 
   if [ "$CHECK_EXIT_CODE" -ne 0 ]; then
-    EXISTING_ISSUE="$(gh issue list --state open --search "\"${BODY_MARKER}\" in:body" --json number --jq '.[0].number' 2>/dev/null || true)"
+    EXISTING_ISSUE="$(gh issue list --state open --label "$TRACKING_LABEL" --json number --jq '.[0].number' 2>/dev/null || true)"
     LABEL_ARGS=()
     for l in "${LABELS[@]}"; do
       LABEL_ARGS+=(--add-label "$l")
@@ -118,7 +128,7 @@ if [ "$STRICT" = "true" ]; then
     fi
   else
     echo "geol check --strict did not fail, no issue created."
-    EXISTING_ISSUE="$(gh issue list --state open --search "\"${BODY_MARKER}\" in:body" --json number --jq '.[0].number' 2>/dev/null || true)"
+    EXISTING_ISSUE="$(gh issue list --state open --label "$TRACKING_LABEL" --json number --jq '.[0].number' 2>/dev/null || true)"
     if [ -n "$EXISTING_ISSUE" ]; then
       echo "Closing previously open issue #${EXISTING_ISSUE}"
       gh issue close "$EXISTING_ISSUE" --comment "✅ Stack is now healthy, closing this report."
