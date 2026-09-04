@@ -38,12 +38,68 @@ jobs:
           geol check
 ```
 
+### Automated check + issue reporting
+
+Instead of scripting `geol check` and issue creation yourself, you can let the action do it from plain YAML inputs:
+
+```yaml
+name: Check EOL
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # every Monday
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check-eol:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Check EOL and open/update an issue
+        uses: opt-nc/geol-action
+        with:
+          create-issue: 'true'          # implies run-check: true
+          file: '.geol.yaml'            # geol stack file, default: .geol.yaml
+          strict: 'true'                # fail the step if anything is EOL
+          issue-title: '🚨 EOL report - {{app_name}}'
+          eol-label: 'eol'              # applied when a product is past EOL
+          warning-label: 'eol:warning'  # applied when a product nears EOL
+          warning-threshold-days: '90'  # "nearing EOL" window
+          labels: 'tech-debt,security'  # extra labels always applied
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+This generates (or updates in place) a single open issue per stack, with a clean Markdown table — no raw CLI logs — and closes it automatically once the stack is healthy again.
+
+| Input                     | Description                                                                 | Default                        |
+| ------------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+| `version`                  | `geol` version to install                                                    | `latest`                        |
+| `run-check`                | Run `geol check` right after install (auto-enabled by `create-issue`)        | `false`                          |
+| `file`                     | Path to the geol stack YAML file                                            | `.geol.yaml`                    |
+| `date`                     | Reference date for EOL calculations (`YYYY-MM-DD`)                          | today                            |
+| `strict`                   | Fail the step if any product is EOL or not on its latest version            | `false`                          |
+| `create-issue`             | Create/update a GitHub issue with the report                                | `false`                          |
+| `issue-title`              | Issue title template, supports `{{app_name}}`, `{{date}}`, `{{score}}`       | `EOL report - {{app_name}}`     |
+| `eol-label`                | Label applied when at least one product is past EOL                         | `eol`                            |
+| `warning-label`            | Label applied when no product is EOL but some are nearing EOL               | `eol:warning`                    |
+| `warning-threshold-days`   | Days before EOL under which a product is considered "nearing EOL"           | `90`                             |
+| `labels`                   | Comma-separated extra labels always applied to the issue                    | `''`                             |
+| `github-token`             | Token used to create/update the issue, required when `create-issue: true`   | `''`                             |
+
+Outputs `eol-count`, `warning-count` and `score` are also available for use in later steps.
+
 ## 🔧 How it works
 
 This action:
 
 1. Downloads the specified version of `geol` (or the latest if not specified) from the GitHub releases
 2. Makes `geol` available for the next workflow steps
+3. Optionally runs `geol check --json`, builds a clean Markdown report, and creates/updates/closes a GitHub issue accordingly, using `gh` and `jq` (both preinstalled on GitHub-hosted runners)
 
 ## 📚 geol Documentation
 

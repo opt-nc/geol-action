@@ -9,6 +9,61 @@ inputs:
     description: 'The version of geol to install. Defaults to "latest".'
     required: false
     default: 'latest'
+  run-check:
+    description: 'Whether to run "geol check" and generate a report right after installing geol. Automatically enabled when "create-issue" is true.'
+    required: false
+    default: 'false'
+  file:
+    description: 'Path to the geol stack YAML file to check.'
+    required: false
+    default: '.geol.yaml'
+  date:
+    description: 'Reference date for EOL calculations (format YYYY-MM-DD, default: today).'
+    required: false
+    default: ''
+  strict:
+    description: 'Fail the workflow step if any product is EOL or not on its latest version.'
+    required: false
+    default: 'false'
+  create-issue:
+    description: 'Whether to create (or update) a GitHub issue with the EOL report.'
+    required: false
+    default: 'false'
+  issue-title:
+    description: 'Title template for the generated issue. Supports {{app_name}}, {{date}} and {{score}} placeholders.'
+    required: false
+    default: 'EOL report - {{app_name}}'
+  eol-label:
+    description: 'Label applied to the issue when at least one product is past EOL.'
+    required: false
+    default: 'eol'
+  warning-label:
+    description: 'Label applied to the issue when no product is EOL but some are nearing EOL.'
+    required: false
+    default: 'eol:warning'
+  warning-threshold-days:
+    description: 'Number of days before EOL under which a product is considered "nearing EOL".'
+    required: false
+    default: '90'
+  labels:
+    description: 'Comma-separated list of extra labels to always apply to the generated issue.'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token used to create/update the issue. Required if "create-issue" is true.'
+    required: false
+    default: ''
+
+outputs:
+  eol-count:
+    description: 'Number of products past their EOL date.'
+    value: ${{ steps.geol-check.outputs.eol-count }}
+  warning-count:
+    description: 'Number of products nearing their EOL date (within warning-threshold-days).'
+    value: ${{ steps.geol-check.outputs.warning-count }}
+  score:
+    description: 'Overall EOL health score reported by geol.'
+    value: ${{ steps.geol-check.outputs.score }}
 
 runs:
   using: 'composite'
@@ -18,3 +73,20 @@ runs:
       env:
         VERSION: ${{ inputs.version }}
       run: curl -fsSL https://raw.githubusercontent.com/opt-nc/geol/main/install.sh | bash -s "$VERSION"
+
+    - name: Check stack EOL and report
+      id: geol-check
+      if: ${{ inputs.run-check == 'true' || inputs.create-issue == 'true' }}
+      shell: bash
+      env:
+        GEOL_FILE: ${{ inputs.file }}
+        GEOL_DATE: ${{ inputs.date }}
+        GEOL_STRICT: ${{ inputs.strict }}
+        GEOL_CREATE_ISSUE: ${{ inputs.create-issue }}
+        GEOL_ISSUE_TITLE: ${{ inputs.issue-title }}
+        GEOL_EOL_LABEL: ${{ inputs.eol-label }}
+        GEOL_WARNING_LABEL: ${{ inputs.warning-label }}
+        GEOL_WARNING_THRESHOLD_DAYS: ${{ inputs.warning-threshold-days }}
+        GEOL_EXTRA_LABELS: ${{ inputs.labels }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: "${{ github.action_path }}/scripts/report.sh"

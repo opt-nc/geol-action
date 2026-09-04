@@ -1,0 +1,28 @@
+name: Test Geol Issue Creation
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  test-create-issue:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+
+      - name: Check EOL and open/update an issue
+        uses: ./
+        with:
+          create-issue: 'true'
+          file: '.geol.yaml'
+          issue-title: '🚨 EOL report - {{app_name}}'
+          labels: 'test'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
