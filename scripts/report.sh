@@ -6,7 +6,6 @@ set -uo pipefail
 FILE="${GEOL_FILE:-.geol.yaml}"
 DATE="${GEOL_DATE:-}"
 STRICT="${GEOL_STRICT:-false}"
-CREATE_ISSUE="${GEOL_CREATE_ISSUE:-false}"
 ISSUE_TITLE_TEMPLATE="${GEOL_ISSUE_TITLE:-EOL report - {{app_name}}}"
 EOL_LABEL="${GEOL_EOL_LABEL:-eol}"
 WARNING_LABEL="${GEOL_WARNING_LABEL:-eol:warning}"
@@ -72,9 +71,9 @@ echo "$JSON_OUTPUT" > /tmp/geol-check-result.json
 echo "## geol EOL report" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 echo "$BODY" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
-if [ "$CREATE_ISSUE" = "true" ]; then
+if [ "$STRICT" = "true" ]; then
   if [ -z "${GITHUB_TOKEN:-}" ]; then
-    echo "::error::'create-issue' is true but no github-token was provided."
+    echo "::error::'strict' is true but no github-token was provided, cannot manage the report issue."
     exit 1
   fi
   export GITHUB_TOKEN
@@ -100,7 +99,7 @@ if [ "$CREATE_ISSUE" = "true" ]; then
     gh label create "$l" --color "ededed" 2>/dev/null || true
   done
 
-  if [ "$EOL_COUNT" -gt 0 ] || [ "$WARNING_COUNT" -gt 0 ]; then
+  if [ "$CHECK_EXIT_CODE" -ne 0 ]; then
     EXISTING_ISSUE="$(gh issue list --state open --search "\"${BODY_MARKER}\" in:body" --json number --jq '.[0].number' 2>/dev/null || true)"
     LABEL_ARGS=()
     for l in "${LABELS[@]}"; do
@@ -118,7 +117,7 @@ if [ "$CREATE_ISSUE" = "true" ]; then
       gh issue create --title "$ISSUE_TITLE" --body "$BODY" "${CREATE_LABEL_ARGS[@]}"
     fi
   else
-    echo "Stack is healthy, no issue created."
+    echo "geol check --strict did not fail, no issue created."
     EXISTING_ISSUE="$(gh issue list --state open --search "\"${BODY_MARKER}\" in:body" --json number --jq '.[0].number' 2>/dev/null || true)"
     if [ -n "$EXISTING_ISSUE" ]; then
       echo "Closing previously open issue #${EXISTING_ISSUE}"

@@ -10,7 +10,7 @@ inputs:
     required: false
     default: 'latest'
   run-check:
-    description: 'Whether to run "geol check" and generate a report right after installing geol. Automatically enabled when "create-issue" is true.'
+    description: 'Whether to run "geol check" and generate a report right after installing geol. Automatically enabled when "strict" is true.'
     required: false
     default: 'false'
   file:
@@ -22,11 +22,7 @@ inputs:
     required: false
     default: ''
   strict:
-    description: 'Fail the workflow step if any product is EOL or not on its latest version.'
-    required: false
-    default: 'false'
-  create-issue:
-    description: 'Whether to create (or update) a GitHub issue with the EOL report.'
+    description: 'Fail the workflow step if any product is EOL or not on its latest version, and create/update a GitHub issue with the report.'
     required: false
     default: 'false'
   issue-title:
@@ -50,7 +46,7 @@ inputs:
     required: false
     default: ''
   github-token:
-    description: 'GitHub token used to create/update the issue. Required if "create-issue" is true.'
+    description: 'GitHub token used to create/update/close the report issue. Required if "strict" is true.'
     required: false
     default: ''
 
@@ -76,13 +72,12 @@ runs:
 
     - name: Check stack EOL and report
       id: geol-check
-      if: ${{ inputs.run-check == 'true' || inputs.create-issue == 'true' }}
+      if: ${{ inputs.run-check == 'true' || inputs.strict == 'true' }}
       shell: bash
       env:
         GEOL_FILE: ${{ inputs.file }}
         GEOL_DATE: ${{ inputs.date }}
         GEOL_STRICT: ${{ inputs.strict }}
-        GEOL_CREATE_ISSUE: ${{ inputs.create-issue }}
         GEOL_ISSUE_TITLE: ${{ inputs.issue-title }}
         GEOL_EOL_LABEL: ${{ inputs.eol-label }}
         GEOL_WARNING_LABEL: ${{ inputs.warning-label }}

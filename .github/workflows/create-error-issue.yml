@@ -20,7 +20,7 @@ jobs:
       - name: Check EOL and open/update an issue
         uses: ./
         with:
-          create-issue: 'true'
+          strict: 'true'
           file: '.geol.yaml'
           issue-title: '🚨 EOL report - {{app_name}}'
           labels: 'test'
