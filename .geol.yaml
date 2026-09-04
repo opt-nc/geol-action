@@ -5,7 +5,7 @@ app_id: mysuperapp
 
 stack:
   - name: ubuntu
-    version: "25.10"
+    version: "26.04"
     id_eol: ubuntu
 
   - name: java temurin
@@ -15,7 +15,7 @@ stack:
     #lts_grace_days: 30 only if the lts_strategy is set to latest, this field is ignored if the lts_strategy is set to any
 
   - name: quarkus
-    version: "3.12"
+    version: "3.38"
     id_eol: quarkus-framework
 
   - name: postgresql
