@@ -44,6 +44,32 @@ EOL_COUNT="$(echo "$JSON_OUTPUT" | jq '[.software_components[] | select(.status 
 WARNING_COUNT="$(echo "$JSON_OUTPUT" | jq --argjson threshold "$WARNING_THRESHOLD_DAYS" \
   '[.software_components[] | select(.status != "EOL" and (.days | tonumber? // 99999) >= 0 and (.days | tonumber? // 99999) <= $threshold)] | length')"
 
+# Components flagged with "always-latest: true" in the stack file (a policy
+# marker, not exposed in geol's JSON output) that are not on their latest
+# version, so we can name them explicitly in the summary.
+ALWAYS_LATEST_NAMES="$(awk '
+  /^[[:space:]]*-[[:space:]]*name:/ {
+    name = $0
+    sub(/^[[:space:]]*-[[:space:]]*name:[[:space:]]*/, "", name)
+    gsub(/^"|"$|^\x27|\x27$/, "", name)
+  }
+  /always-latest:[[:space:]]*true/ { print name }
+' "$FILE")"
+
+NOT_LATEST_LIST=""
+NOT_LATEST_COUNT=0
+if [ -n "$ALWAYS_LATEST_NAMES" ]; then
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    ENTRY="$(echo "$JSON_OUTPUT" | jq -r --arg name "$name" \
+      '.software_components[] | select(.software == $name and .is_latest == false) | "\(.software) (\(.version) → \(.latest_version))"')"
+    if [ -n "$ENTRY" ]; then
+      NOT_LATEST_COUNT=$((NOT_LATEST_COUNT + 1))
+      NOT_LATEST_LIST="${NOT_LATEST_LIST:+${NOT_LATEST_LIST}, }${ENTRY}"
+    fi
+  done <<< "$ALWAYS_LATEST_NAMES"
+fi
+
 # One colored pastille per software component, in the same order as the
 # components appear in geol's own table, so it can be spliced into it.
 ICONS_FILE="$(mktemp)"
@@ -79,11 +105,14 @@ REPORT_CONTENT="$(awk -F'|' -v OFS='|' -v icons_file="$ICONS_FILE" '
 ' "$REPORT_FILE")"
 rm -f "$ICONS_FILE"
 
+NOT_LATEST_SUFFIX=""
+[ "$NOT_LATEST_COUNT" -gt 0 ] && NOT_LATEST_SUFFIX=", ${NOT_LATEST_COUNT} not on latest version (${NOT_LATEST_LIST})"
+
 BODY_MARKER="<!-- geol-action-report:${APP_NAME} -->"
 BODY="$(cat <<EOF
 ${BODY_MARKER}
 **Generated:** ${TODAY} (via [geol](https://github.com/opt-nc/geol))
-**Summary:** ${EOL_COUNT} past EOL, ${WARNING_COUNT} nearing EOL (≤ ${WARNING_THRESHOLD_DAYS} days)
+**Summary:** ${EOL_COUNT} past EOL, ${WARNING_COUNT} nearing EOL (≤ ${WARNING_THRESHOLD_DAYS} days)${NOT_LATEST_SUFFIX}
 
 ${REPORT_CONTENT}
 
@@ -102,6 +131,7 @@ echo "$JSON_OUTPUT" > /tmp/geol-check-result.json
 {
   echo "eol-count=${EOL_COUNT}"
   echo "warning-count=${WARNING_COUNT}"
+  echo "not-latest-count=${NOT_LATEST_COUNT}"
   echo "score=${SCORE_VALUE}"
 } >> "${GITHUB_OUTPUT:-/dev/null}"
 

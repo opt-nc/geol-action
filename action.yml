@@ -57,6 +57,9 @@ outputs:
   warning-count:
     description: 'Number of products nearing their EOL date (within warning-threshold-days).'
     value: ${{ steps.geol-check.outputs.warning-count }}
+  not-latest-count:
+    description: 'Number of products marked "always-latest: true" in the stack file that are not on their latest version.'
+    value: ${{ steps.geol-check.outputs.not-latest-count }}
   score:
     description: 'Overall EOL health score reported by geol.'
     value: ${{ steps.geol-check.outputs.score }}
