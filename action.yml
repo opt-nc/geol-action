@@ -78,6 +78,7 @@ runs:
       if: ${{ inputs.run-check == 'true' || inputs.strict == 'true' }}
       shell: bash
       env:
+        ACTION_PATH: ${{ github.action_path }}
         GEOL_FILE: ${{ inputs.file }}
         GEOL_DATE: ${{ inputs.date }}
         GEOL_STRICT: ${{ inputs.strict }}
@@ -87,4 +88,4 @@ runs:
         GEOL_WARNING_THRESHOLD_DAYS: ${{ inputs.warning-threshold-days }}
         GEOL_EXTRA_LABELS: ${{ inputs.labels }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: "${{ github.action_path }}/scripts/report.sh"
+      run: "$ACTION_PATH/scripts/report.sh"
