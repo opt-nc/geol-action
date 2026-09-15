@@ -17,12 +17,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
 
-      - name: Check EOL and open/update an issue
+      - name: Check EOL and open/update an issue # Uncomment the 'with' section to enable this step
         uses: ./
-        with:
-          strict: 'true'
-          file: '.geol.yaml'
-          issue-title: '🚨 EOL report - {{app_name}}'
-          labels: 'test'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        # with:
+        #   strict: 'true'
+        #   file: '.geol.yaml'
+        #   issue-title: '🚨 EOL report - {{app_name}}'
+        #   labels: 'test'
+        #   github-token: ${{ secrets.GITHUB_TOKEN }}
 
