@@ -6,6 +6,7 @@ app_id: mysuperapp
 stack:
   - name: ubuntu
     version: "26.04"
+    id_eol: ubuntu
 
   - name: java temurin
     version: "21"

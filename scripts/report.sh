@@ -84,6 +84,19 @@ APP_NAME="$(echo "$JSON_OUTPUT" | jq -r '.title // "stack"')"
 SCORE_VALUE="$(echo "$JSON_OUTPUT" | jq -r '.score[0].value // "n/a"')"
 TODAY="$(date -u +%Y-%m-%d)"
 
+# Colored pastille for the Stack Debt Score, matching the same red/orange/
+# green scale used for the per-component status icons below.
+SCORE_BADGE=""
+if [[ "$SCORE_VALUE" =~ ^[0-9]+$ ]]; then
+  if [ "$SCORE_VALUE" -lt 40 ]; then
+    SCORE_BADGE="🔴"
+  elif [ "$SCORE_VALUE" -lt 75 ]; then
+    SCORE_BADGE="🟠"
+  else
+    SCORE_BADGE="🟢"
+  fi
+fi
+
 EOL_COUNT="$(echo "$JSON_OUTPUT" | jq '[.software_components[] | select(.status == "EOL")] | length')"
 WARNING_COUNT="$(echo "$JSON_OUTPUT" | jq --argjson threshold "$WARNING_THRESHOLD_DAYS" \
   '[.software_components[] | select(.status != "EOL" and (.days | tonumber? // 99999) >= 0 and (.days | tonumber? // 99999) <= $threshold)] | length')"
@@ -148,6 +161,11 @@ REPORT_CONTENT="$(awk -F'|' -v OFS='|' -v icons_file="$ICONS_FILE" '
   { print }
 ' "$REPORT_FILE")"
 rm -f "$ICONS_FILE"
+
+# Prepend the score pastille to geol's own "X/100 (...)" score line.
+if [ -n "$SCORE_BADGE" ]; then
+  REPORT_CONTENT="$(echo "$REPORT_CONTENT" | sed -E "s/^([0-9]+\/100)/${SCORE_BADGE} \1/")"
+fi
 
 NOT_LATEST_SUFFIX=""
 [ "$NOT_LATEST_COUNT" -gt 0 ] && NOT_LATEST_SUFFIX=", ${NOT_LATEST_COUNT} not on latest version (${NOT_LATEST_LIST})"
