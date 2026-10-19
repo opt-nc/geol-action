@@ -24,7 +24,7 @@ jobs:
         run: npm ci
       - name: 📦 Semantic Release
         id: release
-        uses: cycjimmy/semantic-release-action@bda3da8d0cac44ed30fdc42bf9ad6a0362ce0583
+        uses: cycjimmy/semantic-release-action@03595b5eaf44910cf239ff20904cc52d410f97d4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
